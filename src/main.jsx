@@ -206,7 +206,7 @@ function normalizeFinding(finding) {
 
 function buildAgents(audit, findings = []) {
   const status = audit?.status || 'created';
-  const hasScan = ['mock_scan_complete', 'report_generated'].includes(status);
+  const hasScan = ['web_audit_complete', 'mock_scan_complete', 'report_generated'].includes(status);
   const hasReport = status === 'report_generated';
   return backendAgentOrder.map((name) => {
     const complete =
@@ -219,10 +219,10 @@ function buildAgents(audit, findings = []) {
     const progress = complete ? 100 : running ? 45 : 0;
     const summaries = {
       'Scope Agent': audit ? 'SQLite run created' : 'Waiting for target',
-      'Recon Agent': hasScan ? 'Mock target profile loaded' : 'Waiting for mock scanner',
-      'Route Agent': hasScan ? 'Mock routes written to raw JSON' : 'Waiting for mock scanner',
-      'Scanner Agent': hasScan ? `${findings.length} findings parsed into SQLite` : 'Waiting for mock scanner',
-      'CORS Agent': hasScan ? 'Browser-boundary checks simulated' : 'Waiting for mock scanner',
+      'Recon Agent': hasScan ? 'Live DNS and HTTP profile captured' : 'Waiting for safe Web engine',
+      'Route Agent': hasScan ? 'Bounded GET/HEAD route checks captured' : 'Waiting for safe Web engine',
+      'Scanner Agent': hasScan ? `${findings.length} observed findings stored in SQLite` : 'Waiting for safe Web engine',
+      'CORS Agent': hasScan ? 'Browser trust boundary observed live' : 'Waiting for safe Web engine',
       'Exploit Agent': hasScan ? 'No active exploitation performed' : 'Disabled until scan',
       'PoC Agent': hasScan ? `${findings.length} safe PoCs generated` : 'Waiting for findings',
       'Duplicate Agent': hasScan ? 'Duplicate leads derived locally' : 'Waiting for findings',
@@ -243,6 +243,7 @@ function normalizeAuditResponse(data) {
   const rawAudit = data.audit;
   if (!rawAudit) return null;
   const findings = (data.findings || []).map(normalizeFinding).sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
+  const engineAudit = data.engine_audit;
   return {
     id: rawAudit.run_id,
     run_id: rawAudit.run_id,
@@ -257,17 +258,18 @@ function normalizeAuditResponse(data) {
       markdown: data.markdown || ''
     } : null,
     evidence: {
+      ...(engineAudit?.evidence || {}),
       run_id: rawAudit.run_id,
       target_type: rawAudit.target_type,
       run_dir: rawAudit.run_dir,
       raw_dir: rawAudit.raw_dir,
       reports_dir: rawAudit.reports_dir,
       report_path: rawAudit.report_path,
-      scanner_mode: 'mock'
+      scanner_mode: engineAudit ? 'authorized-read-only' : 'not-run'
     },
     findings,
-    timeline: buildTimeline(rawAudit, findings),
-    agents: buildAgents(rawAudit, findings)
+    timeline: engineAudit?.timeline?.length ? engineAudit.timeline : buildTimeline(rawAudit, findings),
+    agents: engineAudit?.agents?.length ? engineAudit.agents : buildAgents(rawAudit, findings)
   };
 }
 
@@ -276,10 +278,10 @@ function buildTimeline(audit, findings) {
   const items = [
     { time: new Date(audit.created_at).toLocaleTimeString([], { hour12: false }), agent: 'Scope Agent', message: 'AuditRun row created in SQLite', state: 'done' }
   ];
-  if (['mock_scan_complete', 'report_generated'].includes(audit.status)) {
+  if (['web_audit_complete', 'mock_scan_complete', 'report_generated'].includes(audit.status)) {
     items.push(
-      { time: new Date(audit.updated_at).toLocaleTimeString([], { hour12: false }), agent: 'Scanner Agent', message: `mock_scan.json parsed into ${findings.length} findings`, state: 'done' },
-      { time: new Date(audit.updated_at).toLocaleTimeString([], { hour12: false }), agent: 'PoC Agent', message: `${findings.length} safe mock PoCs generated`, state: 'done' }
+      { time: new Date(audit.updated_at).toLocaleTimeString([], { hour12: false }), agent: 'Scanner Agent', message: `web_audit.json parsed into ${findings.length} findings`, state: 'done' },
+      { time: new Date(audit.updated_at).toLocaleTimeString([], { hour12: false }), agent: 'PoC Agent', message: `${findings.length} safe repro commands generated`, state: 'done' }
     );
   }
   if (audit.status === 'report_generated') {
@@ -367,14 +369,14 @@ function Sidebar({ activeNav, setActiveNav, setTab, notify }) {
         </button>
         <div className="credits">
           <div className="credits-head">
-            <span>Mock Mode</span>
-            <button className="tiny-icon" onClick={() => notify('No OpenAI API is required. Scanner is mock-only.')} aria-label="Mock mode help">
+            <span>Safe Web Mode</span>
+            <button className="tiny-icon" onClick={() => notify('Bounded authorized GET/HEAD checks only. Deep proofs use localhost fixtures.')} aria-label="Safe mode help">
               <CircleHelp size={15} />
             </button>
           </div>
-          <strong>0 external AI calls</strong>
+          <strong>Read-only HTTP checks</strong>
           <div className="meter"><span style={{ width: '78%' }} /></div>
-          <small>Artifacts stored locally</small>
+          <small>Evidence stored locally</small>
         </div>
       </div>
     </aside>
@@ -449,7 +451,7 @@ function Composer({
       </div>
       <div className="action-grid">
         {[
-          ['Run full audit', 'Recon, scan, validate, report', GitBranch, 'full'],
+          ['Run safe Web audit', 'Recon, observe, validate, report', GitBranch, 'full'],
           ['Check duplicate', 'Public leads from findings', Sparkles, 'duplicate'],
           ['Draft report', 'Markdown from evidence', Clipboard, 'report']
         ].map(([title, subtitle, Icon, mode]) => (
@@ -552,7 +554,7 @@ function FindingsTable({ findings, selected, setSelected, onViewAll }) {
 function CodeExcerpt({ finding, onCopy }) {
   const lines = finding?.poc
     ? finding.poc.split('\n').map((line, index) => [String(index + 1).padStart(2, '0'), line])
-    : [['01', 'Run mock scanner mode to generate a stored PoC command.']];
+    : [['01', 'Run a safe Web audit to generate a stored reproduction command.']];
   return (
     <section className="panel code-panel">
       <div className="panel-title">
@@ -738,7 +740,7 @@ function VerifiedIdorProof({ proof, running, onRun }) {
       </div>
       {!proof && (
         <div className="proof-empty">
-          <strong>Mock findings stop here. This proof executes HTTP requests.</strong>
+          <strong>Safe recon observes. Verified replay proves the authorization harm.</strong>
           <span>No external target is contacted; the vulnerable fixture binds to localhost on a random port.</span>
         </div>
       )}
@@ -806,7 +808,7 @@ function SettingsPanel({ notify }) {
         <h3><Settings size={18} /> Settings</h3>
       </div>
       <div className="settings-grid">
-        <button onClick={() => notify('Mock scanner mode is locked on for this MVP')}>Mock scanner mode: on</button>
+        <button onClick={() => notify('Safe Web mode uses bounded GET/HEAD requests and same-origin redirects only')}>Safe Web mode: on</button>
         <button onClick={() => notify('OpenAI API disabled by design')}>OpenAI API: disabled</button>
         <button onClick={() => notify('Google APIs disabled by design')}>Google APIs: disabled</button>
         <button onClick={() => notify('Active exploitation disabled')}>Active exploitation: disabled</button>
@@ -938,9 +940,9 @@ function App() {
       setAudit(normalizeAuditResponse(created));
       notify('AuditRun created in SQLite');
 
-      const scanned = await api(`/api/audits/${created.audit.run_id}/run-mock-scan`, { method: 'POST' });
+      const scanned = await api(`/api/audits/${created.audit.run_id}/run-web-audit`, { method: 'POST' });
       setAudit(normalizeAuditResponse(scanned));
-      notify('Mock scan written and parsed');
+      notify('Live safe Web evidence captured');
 
       const reported = await api(`/api/audits/${created.audit.run_id}/generate-report`, { method: 'POST' });
       setAudit(normalizeAuditResponse(reported));

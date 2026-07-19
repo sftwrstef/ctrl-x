@@ -14,6 +14,21 @@ Administrative baseline work is not claimed as new product functionality.
 
 ## Eligible product work
 
+### July 19: Authorized Safe Web Hunter
+
+- Connected the pre-existing Node Web audit engine to the persistent FastAPI and
+  SQLite product path; the dashboard no longer uses mock findings for normal runs.
+- Added live DNS, homepage, same-origin route, header, cookie, CORS, robots.txt,
+  link, form, and dotfile observations behind an explicit authorization gate.
+- Added same-origin redirect enforcement, HTTP(S)-only requests, a four-redirect
+  ceiling, per-request timeouts, and a 512 KiB response limit.
+- Persisted the raw engine evidence, normalized findings, generated repro commands,
+  agent timeline, duplicate-search leads, and final Markdown report per run.
+- Tightened severity discipline so hardening gaps remain observations and wildcard
+  credentialed CORS is not incorrectly treated as a browser-readable exploit.
+- Added a deterministic localhost Web fixture test and verified the complete flow in
+  Chromium with zero console errors.
+
 ### July 19: Verified IDOR Replay
 
 - Added an ephemeral localhost profile API with deterministic attacker and
@@ -44,5 +59,10 @@ in Codex Desktop with GPT-5.6 Sol in primary session
 - `npm audit --omit=dev`: zero known vulnerabilities.
 - Browser flow: opened the app, selected **Run real proof**, observed the
   verified control/exploit matrix, and recorded no browser console errors.
+- Safe Web browser flow: created an authorized localhost hunt, observed three
+  evidence-backed hardening observations, generated the final report, and recorded no
+  browser console errors.
+- `npm run test:web`: pass against a deterministic localhost fixture.
+- Safe Web UI capture: `evidence/dev-week/safe-web-hunter.png`.
 - JSON proof: `evidence/dev-week/verified-idor-proof.json`.
 - UI capture: `evidence/dev-week/dev-week-verified-idor.png`.

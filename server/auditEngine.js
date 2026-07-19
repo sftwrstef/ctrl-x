@@ -196,24 +196,69 @@ async function runScopeAgent(audit) {
   return { summary: 'Authorized scope locked', evidence };
 }
 
-async function fetchText(url, options = {}) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 8000);
-  try {
-    const response = await fetch(url, {
-      method: options.method || 'GET',
-      redirect: 'follow',
-      signal: controller.signal,
-      headers: {
-        'user-agent': 'BugBunnyLocal/0.1 authorized-security-audit',
-        ...(options.headers || {})
-      }
-    });
-    const text = options.method === 'HEAD' ? '' : await response.text();
-    return { response, text };
-  } finally {
-    clearTimeout(timeout);
+async function readLimitedText(response, maxBytes) {
+  if (!response.body) return '';
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let received = 0;
+  let text = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > maxBytes) {
+      await reader.cancel('Bug Bunny response-size limit reached');
+      throw new Error(`Response exceeded the ${maxBytes}-byte safety limit`);
+    }
+    text += decoder.decode(value, { stream: true });
   }
+  return text + decoder.decode();
+}
+
+async function fetchText(rawUrl, options = {}) {
+  const method = options.method || 'GET';
+  const timeoutMs = options.timeoutMs || 8000;
+  const maxBytes = options.maxBytes || 524_288;
+  const allowedOrigin = options.allowedOrigin || new URL(rawUrl).origin;
+  let currentUrl = new URL(rawUrl);
+
+  for (let redirectCount = 0; redirectCount <= 4; redirectCount += 1) {
+    if (!['http:', 'https:'].includes(currentUrl.protocol)) {
+      throw new Error(`Blocked non-HTTP protocol: ${currentUrl.protocol}`);
+    }
+    if (currentUrl.origin !== allowedOrigin) {
+      throw new Error(`Blocked cross-origin redirect to ${currentUrl.origin}`);
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(currentUrl, {
+        method,
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: {
+          'user-agent': 'BugBunnyLocal/0.2 authorized-safe-web-audit',
+          ...(options.headers || {})
+        }
+      });
+
+      if ([301, 302, 303, 307, 308].includes(response.status)) {
+        const location = response.headers.get('location');
+        if (!location) return { response, text: '' };
+        currentUrl = new URL(location, currentUrl);
+        continue;
+      }
+
+      const text = method === 'HEAD' ? '' : await readLimitedText(response, maxBytes);
+      return { response, text };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  throw new Error('Redirect limit exceeded');
 }
 
 async function runReconAgent(audit) {
@@ -278,13 +323,13 @@ async function runScannerAgent(audit) {
   const headers = audit.evidence.http?.headers || {};
   const evidence = [];
   const add = (finding) => {
-    audit.findings.push({ id: crypto.randomUUID(), ...finding, status: 'Verified', time: 'just now' });
+    audit.findings.push({ id: crypto.randomUUID(), status: 'Observed', time: 'just now', ...finding });
     evidence.push(`${finding.severity}: ${finding.title}`);
   };
 
   if (!headers['content-security-policy']) {
     add({
-      severity: 'Medium',
+      severity: 'Info',
       path: audit.target.origin,
       title: 'Missing Content-Security-Policy header',
       hypothesis: 'Browsers have no CSP policy to reduce XSS impact or script injection blast radius.',
@@ -296,7 +341,7 @@ async function runScannerAgent(audit) {
 
   if (audit.target.protocol === 'https:' && !headers['strict-transport-security']) {
     add({
-      severity: 'Medium',
+      severity: 'Low',
       path: audit.target.origin,
       title: 'Missing HSTS header',
       hypothesis: 'Users can be exposed to downgrade or first-request interception risk.',
@@ -308,7 +353,7 @@ async function runScannerAgent(audit) {
 
   if (!headers['x-frame-options'] && !frameAncestors(headers['content-security-policy'])) {
     add({
-      severity: 'Low',
+      severity: 'Info',
       path: audit.target.origin,
       title: 'No clickjacking frame control detected',
       hypothesis: 'Pages may be embeddable in hostile frames unless application logic blocks it.',
@@ -320,7 +365,7 @@ async function runScannerAgent(audit) {
 
   if (!headers['referrer-policy']) {
     add({
-      severity: 'Low',
+      severity: 'Info',
       path: audit.target.origin,
       title: 'Missing Referrer-Policy header',
       hypothesis: 'Sensitive URL path or query data may leak through the Referer header.',
@@ -333,7 +378,7 @@ async function runScannerAgent(audit) {
   const setCookie = headers['set-cookie'] || '';
   if (setCookie && /session|auth|token/i.test(setCookie) && !/;\s*secure/i.test(setCookie)) {
     add({
-      severity: 'High',
+      severity: 'Medium',
       path: audit.target.origin,
       title: 'Sensitive cookie missing Secure flag',
       hypothesis: 'Authentication-related cookies may be sent over plaintext requests.',
@@ -378,6 +423,7 @@ async function runScannerAgent(audit) {
           title: 'Readable environment file exposed',
           hypothesis: 'The environment file route returned secret-like key/value content.',
           confidence: 92,
+          status: 'Verified',
           evidence: [`GET ${exposedEnv.url} returned non-HTML content matching environment variable patterns.`],
           remediation: 'Block dotfiles at the web server and rotate any exposed credentials.'
         });
@@ -418,19 +464,21 @@ async function runCorsAgent(audit) {
     audit.evidence.cors = { acao, acac };
     evidence.push(`access-control-allow-origin: ${acao || 'absent'}`);
     evidence.push(`access-control-allow-credentials: ${acac || 'absent'}`);
-    if ((acao === '*' || acao === 'https://attacker.example') && /true/i.test(acac)) {
+    if (acao === 'https://attacker.example' && /true/i.test(acac)) {
       audit.findings.push({
         id: crypto.randomUUID(),
-        severity: 'High',
+        severity: 'Medium',
         path: audit.target.origin,
-        title: 'Permissive credentialed CORS policy',
-        hypothesis: 'A hostile origin may read credentialed responses from the browser.',
-        confidence: 90,
-        status: 'Verified',
+        title: 'Attacker origin reflected with credentials',
+        hypothesis: 'A hostile origin is explicitly trusted with credentials; impact depends on whether the response contains authenticated sensitive data.',
+        confidence: 84,
+        status: 'Candidate',
         time: 'just now',
-        evidence: [`Origin reflection/wildcard observed with credentials: ACAO=${acao}, ACAC=${acac}.`],
-        remediation: 'Allowlist trusted origins exactly and avoid credentialed wildcard/reflected CORS.'
+        evidence: [`Attacker origin reflected with credentials: ACAO=${acao}, ACAC=${acac}.`],
+        remediation: 'Allowlist trusted origins exactly and validate authenticated response exposure before assigning impact.'
       });
+    } else if (acao === '*' && /true/i.test(acac)) {
+      evidence.push('Wildcard ACAO with credentials observed; browsers block credentialed reads, so no vulnerability was filed.');
     }
   } catch (error) {
     audit.evidence.cors = { error: error.message };
@@ -560,4 +608,4 @@ function renderReport(audit) {
   return `${lines.join('\n')}\n`;
 }
 
-export { createAudit, getAudit, listAudits };
+export { createAudit, fetchText, getAudit, listAudits };

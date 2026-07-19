@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +24,8 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT_DIR / "audit_console.sqlite3"
 RUNS_DIR = ROOT_DIR / "runs"
 ARTIFACTS_DIR = ROOT_DIR / "artifacts"
+WEB_ENGINE_URL = os.environ.get("BUG_BUNNY_WEB_ENGINE_URL", "http://127.0.0.1:8787")
+WEB_AUDIT_TIMEOUT_SECONDS = 90
 
 
 class AuditCreateRequest(BaseModel):
@@ -276,6 +282,43 @@ def mock_scan_payload(run: AuditRunModel) -> dict[str, Any]:
     }
 
 
+def web_engine_request(path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    request = Request(
+        f"{WEB_ENGINE_URL}{path}",
+        data=body,
+        method="POST" if payload is not None else "GET",
+        headers={"content-type": "application/json"},
+    )
+    try:
+        with urlopen(request, timeout=10) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as error:
+        detail = error.read().decode("utf-8", errors="replace")
+        raise HTTPException(status_code=502, detail=f"Web audit engine rejected the request: {detail}") from error
+    except (URLError, TimeoutError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail="Safe Web engine is unavailable. Start Bug Bunny with `npm run dev`.",
+        ) from error
+
+
+def load_engine_audit(run: AuditRunModel) -> dict[str, Any] | None:
+    raw_path = Path(run.raw_dir) / "web_audit.json"
+    if not raw_path.exists():
+        return None
+    return json.loads(raw_path.read_text(encoding="utf-8"))
+
+
+def response_for_run(run: AuditRunModel, findings: list[FindingModel], markdown: str = "") -> dict[str, Any]:
+    return {
+        "audit": run.model_dump(),
+        "findings": [finding.model_dump() for finding in findings],
+        "markdown": markdown,
+        "engine_audit": load_engine_audit(run),
+    }
+
+
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     return {"ok": True, "service": "bug-bunny-fastapi", "db_path": str(DB_PATH)}
@@ -357,7 +400,73 @@ def get_audit(run_id: str) -> dict[str, Any]:
     markdown = ""
     if run.report_path and Path(run.report_path).exists():
         markdown = Path(run.report_path).read_text(encoding="utf-8")
-    return {"audit": run.model_dump(), "findings": [finding.model_dump() for finding in findings], "markdown": markdown}
+    return response_for_run(run, findings, markdown)
+
+
+@app.post("/api/audits/{run_id}/run-web-audit")
+def run_web_audit(run_id: str) -> dict[str, Any]:
+    run = get_run_or_404(run_id)
+    if run.target_type != "url":
+        raise HTTPException(status_code=400, detail="The live Web engine currently accepts HTTP(S) targets only.")
+
+    update_run_status(run_id, "scanning")
+    started = web_engine_request(
+        "/api/audits",
+        {
+            "target": run.target,
+            "scopeRules": run.scope_notes,
+            "authorized": run.authorized,
+            "mode": "authorized-safe-web",
+        },
+    )
+    engine_id = started["audit"]["id"]
+    deadline = time.monotonic() + WEB_AUDIT_TIMEOUT_SECONDS
+    engine_audit = started["audit"]
+
+    while engine_audit.get("status") not in {"complete", "failed"}:
+        if time.monotonic() >= deadline:
+            update_run_status(run_id, "failed")
+            raise HTTPException(status_code=504, detail="Safe Web audit exceeded its 90-second limit.")
+        time.sleep(0.2)
+        engine_audit = web_engine_request(f"/api/audits/{engine_id}")["audit"]
+
+    if engine_audit.get("status") == "failed":
+        update_run_status(run_id, "failed")
+        raise HTTPException(status_code=502, detail=engine_audit.get("error") or "Safe Web audit failed.")
+
+    raw_path = Path(run.raw_dir) / "web_audit.json"
+    raw_path.write_text(json.dumps(engine_audit, indent=2), encoding="utf-8")
+
+    with connect() as conn:
+        conn.execute("DELETE FROM findings WHERE run_id = ?", (run_id,))
+        now = utc_now()
+        for item in engine_audit.get("findings", []):
+            conn.execute(
+                """
+                INSERT INTO findings (
+                    finding_id, run_id, severity, title, location, hypothesis,
+                    confidence, evidence_json, remediation, poc, status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item.get("id") or str(uuid.uuid4()),
+                    run_id,
+                    item.get("severity", "Info"),
+                    item.get("title", "Untitled finding"),
+                    item.get("path", run.target),
+                    item.get("hypothesis", "Review the captured evidence."),
+                    int(item.get("confidence", 0)),
+                    json.dumps({"mode": "authorized-read-only", "observations": item.get("evidence", []), "validation": item.get("validation")}),
+                    item.get("remediation", "Review and remediate the observed condition."),
+                    item.get("poc", ""),
+                    item.get("status", "Observed"),
+                    now,
+                ),
+            )
+
+    update_run_status(run_id, "web_audit_complete")
+    run = get_run_or_404(run_id)
+    return response_for_run(run, get_findings_for_run(run_id))
 
 
 @app.post("/api/audits/{run_id}/run-mock-scan")
@@ -418,16 +527,18 @@ def generate_report(run_id: str) -> dict[str, Any]:
     run = get_run_or_404(run_id)
     findings = get_findings_for_run(run_id)
     if not findings:
-        raise HTTPException(status_code=400, detail="Run mock scan before generating a report.")
+        raise HTTPException(status_code=400, detail="Run a safe Web audit before generating a report.")
 
     report_path = Path(run.reports_dir) / "report.md"
+    engine_audit = load_engine_audit(run)
+    scanner_mode = "authorized-read-only" if engine_audit else "mock"
     lines = [
         "# Bug Bunny.ai Local Audit Report",
         "",
         f"- Run ID: `{run.run_id}`",
         f"- Target: `{run.target}`",
         f"- Target type: `{run.target_type}`",
-        f"- Scanner mode: `mock`",
+        f"- Scanner mode: `{scanner_mode}`",
         f"- Generated: `{utc_now()}`",
         "",
         "## Scope Notes",
@@ -453,19 +564,21 @@ def generate_report(run_id: str) -> dict[str, Any]:
         [
             "",
             "## Notes",
-            "This report was generated in mock scanner mode. No active exploitation was performed.",
+            (
+                "This report was generated from bounded live DNS and HTTP observations. "
+                "Only GET and HEAD requests were used; no active exploitation was performed."
+                if engine_audit
+                else "This report was generated in mock scanner mode. No active exploitation was performed."
+            ),
         ]
     )
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     update_run_status(run_id, "report_generated", str(report_path))
     run = get_run_or_404(run_id)
     findings = get_findings_for_run(run_id)
-    return {
-        "audit": run.model_dump(),
-        "findings": [finding.model_dump() for finding in findings],
-        "report_path": str(report_path),
-        "markdown": report_path.read_text(encoding="utf-8"),
-    }
+    response = response_for_run(run, findings, report_path.read_text(encoding="utf-8"))
+    response["report_path"] = str(report_path)
+    return response
 
 
 @app.get("/api/audits/{run_id}/report", response_class=PlainTextResponse)

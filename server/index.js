@@ -7,7 +7,7 @@ const port = Number(process.env.BUG_BUNNY_API_PORT || 8787);
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, name: 'bug-bunny-ai-api' });
+  res.json({ ok: true, name: 'bug-bunny-safe-web-engine', mode: 'authorized-read-only' });
 });
 
 app.get('/api/audits', (_req, res) => {

@@ -2,26 +2,39 @@
 
 # 🐰 Bug Bunny
 
-### Verified security proofs, not scanner theatre.
+### Authorized Web recon. Evidence-first findings. Verified proof replay.
 
 `LOCAL-FIRST` &nbsp; `VICTIM-CENTERED` &nbsp; `EVIDENCE-BACKED` &nbsp; `OPENAI BUILD WEEK 2026`
 
-<sub>Built with Codex · React / FastAPI / SQLite · localhost-only demonstration</sub>
+<sub>Built with Codex · React / FastAPI / SQLite · bounded GET/HEAD checks</sub>
 
 </div>
 
 ---
 
 > [!IMPORTANT]
-> **One claim. One valid control. One replayable proof.**
+> **Observe broadly. Claim narrowly. Prove what matters.**
 >
-> Bug Bunny takes a security finding past a dashboard card: it replays the behavior
-> against a live ephemeral local fixture, compares it with the strongest truthful
-> control, and saves redacted, hashed evidence for review.
+> Bug Bunny maps an authorized Web target with bounded live checks, separates
+> observations from verified findings, builds reproducible evidence, and can take
+> an authorization claim through a same-state exploit replay.
 
-![Bug Bunny verified IDOR replay](evidence/dev-week/dev-week-verified-idor.png)
+![Bug Bunny authorized Safe Web Hunter](evidence/dev-week/safe-web-hunter.png)
 
-## The proof, at a glance
+## What the live Web hunter does
+
+| Phase | Bounded behavior | Output |
+| --- | --- | --- |
+| **Scope** | Requires explicit authorization and records operator limits | Immutable run context |
+| **Recon** | DNS, homepage, title, forms, same-origin links, robots.txt | Raw local evidence |
+| **Route map** | Same-origin `GET`/`HEAD` checks with time, redirect, and size limits | Route/status inventory |
+| **Trust checks** | Headers, cookies, CORS, dotfile validation | Evidence-backed observations |
+| **Handoff** | Repro commands, duplicate-search leads, timeline, Markdown | Persistent SQLite run + report |
+
+Generic hardening gaps are labeled as observations—not inflated into bounty-grade
+vulnerabilities. Active exploitation remains disabled for live targets.
+
+## Verified IDOR proof, at a glance
 
 | | Check | Result |
 | :---: | --- | --- |
@@ -34,7 +47,7 @@
 > This is not a status-code demo. The replay asserts exposure of victim-private data
 > from the same seeded state and identity used for the valid control.
 
-## How it works
+## How proof replay works
 
 ```text
 seed attacker + victim
@@ -50,7 +63,7 @@ start vulnerable API on localhost
                                   write redacted proof artifact
 ```
 
-The fixture uses a random `127.0.0.1` port and never contacts a third-party target.
+The proof fixture uses a random `127.0.0.1` port and never contacts a third-party target.
 
 ## Run it
 
@@ -65,10 +78,12 @@ python3 -m venv .venv
 npm run dev
 ```
 
-Open the Vite URL, then choose **Run verified IDOR replay**.
+Open the Vite URL. Choose **Run safe Web audit** for the authorized read-only hunter,
+or **Run real proof** for the deterministic localhost IDOR replay.
 
 ```bash
-# Or execute the proof without the UI
+# Verify both real workflows without the UI
+npm run test:web
 .venv/bin/python -m unittest tests.test_idor_proof -v
 ```
 
@@ -77,10 +92,11 @@ Evidence is written to [`evidence/dev-week/verified-idor-proof.json`](evidence/d
 ## Inside the repo
 
 ```text
-src/                    React dashboard + control/exploit matrix
-backend/                FastAPI application + SQLite persistence
+src/                    React hunt console + evidence views
+server/auditEngine.js   Bounded live Web recon and analysis engine
+backend/                Persistent API, report pipeline, proof bridge
 proofs/idor_proof.py    Local fixture + replay engine
-tests/                  Focused end-to-end proof test
+tests/                  Deterministic local Web audit + IDOR proof tests
 evidence/dev-week/      Generated artifact + demo screenshot
 ```
 
@@ -88,7 +104,7 @@ evidence/dev-week/      Generated artifact + demo screenshot
 
 | Pre-existing baseline | Dev Week extension |
 | --- | --- |
-| Dashboard, FastAPI API, SQLite storage, mock audit pipeline | Verified IDOR replay, UI matrix, evidence artifact, focused test |
+| Dashboard, FastAPI API, SQLite storage, disconnected Web engine | Live engine integration, scope guardrails, persistent evidence, verified IDOR replay, focused tests |
 
 Built collaboratively with **Codex** using **GPT-5.6 Sol**.
 Primary session: `019f7376-015c-78b3-a2ea-7b43e4b03b40`.
