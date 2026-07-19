@@ -1,0 +1,11 @@
+node_modules/
+.venv/
+dist/
+audit_console.sqlite3
+runs/
+reports/
+output/
+__pycache__/
+*.py[cod]
+.DS_Store
+
