@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 const python = existsSync('.venv/bin/python') ? '.venv/bin/python' : 'python3';
 
 const children = [
-  spawn(python, ['-m', 'uvicorn', 'backend.main:app', '--host', '127.0.0.1', '--port', '8000', '--reload'], { stdio: 'inherit', env: process.env }),
+  spawn(python, ['-m', 'uvicorn', 'backend.main:app', '--host', '127.0.0.1', '--port', '8000'], { stdio: 'inherit', env: process.env }),
   spawn('npx', ['vite', '--host', '127.0.0.1', '--port', '5173'], { stdio: 'inherit', env: process.env })
 ];
 

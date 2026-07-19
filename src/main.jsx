@@ -720,6 +720,55 @@ function AuditRunsPanel({ runs, onLoadRun, onRefreshRuns }) {
   );
 }
 
+function VerifiedIdorProof({ proof, running, onRun }) {
+  const control = proof?.control;
+  const exploit = proof?.exploit;
+  const confirmed = proof?.verdict === 'confirmed';
+
+  return (
+    <section className={`panel verified-proof ${confirmed ? 'confirmed' : ''}`}>
+      <div className="panel-title proof-title">
+        <div>
+          <h3><ShieldCheck size={18} /> Verified IDOR Replay</h3>
+          <p>Executes a real same-state control and attack against an ephemeral local fixture.</p>
+        </div>
+        <button className="mini-action" onClick={onRun} disabled={running}>
+          <Zap size={16} /> {running ? 'Running proof…' : 'Run real proof'}
+        </button>
+      </div>
+      {!proof && (
+        <div className="proof-empty">
+          <strong>Mock findings stop here. This proof executes HTTP requests.</strong>
+          <span>No external target is contacted; the vulnerable fixture binds to localhost on a random port.</span>
+        </div>
+      )}
+      {proof && (
+        <>
+          <div className="proof-matrix">
+            <article>
+              <span>Truthful control</span>
+              <strong>Attacker → own profile</strong>
+              <code>{control.response.status} · owner={control.response.body.id}</code>
+              <em className="proof-ok"><Check size={14} /> legitimate access works</em>
+            </article>
+            <article className="proof-harm">
+              <span>Exploit</span>
+              <strong>Attacker → victim profile</strong>
+              <code>{exploit.response.status} · owner={exploit.response.body.id}</code>
+              <em><Bug size={14} /> victim private data exposed</em>
+            </article>
+          </div>
+          <div className="proof-verdict">
+            <span><Check size={16} /> VERIFIED EXECUTION</span>
+            <strong>Unauthenticated access is rejected; the same authenticated actor can still retrieve the victim record.</strong>
+            <code>seed {proof.fixture.seed_sha256.slice(0, 12)}…</code>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 function ScopePanel({ target, setTarget, scopeRules, setScopeRules, authorized, setAuthorized, audit }) {
   return (
     <section className="panel scope-panel">
@@ -831,6 +880,8 @@ function App() {
   const [audit, setAudit] = useState(null);
   const [runs, setRuns] = useState([]);
   const [error, setError] = useState('');
+  const [idorProof, setIdorProof] = useState(null);
+  const [proofRunning, setProofRunning] = useState(false);
   const tabs = ['Triage', 'Exploit Map', 'Report Draft'];
   const running = audit?.status === 'scanning';
   const rawFindings = audit?.findings || [];
@@ -898,6 +949,19 @@ function App() {
     } catch (runError) {
       setError(runError.message);
       notify(runError.message);
+    }
+  }
+
+  async function runIdorProof() {
+    setProofRunning(true);
+    try {
+      const data = await api('/api/proofs/idor/run', { method: 'POST' });
+      setIdorProof(data.proof);
+      notify('Victim-centered IDOR proof confirmed');
+    } catch (proofError) {
+      notify(proofError.message);
+    } finally {
+      setProofRunning(false);
     }
   }
 
@@ -970,6 +1034,7 @@ function App() {
               error={error}
             />
             <AgentSwarm onRun={startAudit} audit={audit} running={running} />
+            <VerifiedIdorProof proof={idorProof} running={proofRunning} onRun={runIdorProof} />
             {activeNav === 'Hunts' && <AuditRunsPanel runs={runs} onLoadRun={loadRun} onRefreshRuns={refreshRuns} />}
             {activeNav === 'Scope' && (
               <ScopePanel

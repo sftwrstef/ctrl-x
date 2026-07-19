@@ -1402,6 +1402,124 @@ pre {
   box-shadow: 0 12px 22px rgba(111, 192, 0, 0.18);
 }
 
+.verified-proof {
+  margin-top: 14px;
+  overflow: hidden;
+}
+
+.verified-proof.confirmed {
+  border-color: #9dd84f;
+  box-shadow: 0 0 0 2px rgba(151, 222, 46, 0.12);
+}
+
+.proof-title {
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.proof-title > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.proof-title p {
+  margin: 0;
+  color: #667085;
+  font-size: 12px;
+}
+
+.proof-empty {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  color: #344054;
+  background: linear-gradient(135deg, #fbfff5, #f6f8fb);
+}
+
+.proof-empty span {
+  color: #667085;
+  font-size: 12px;
+}
+
+.proof-matrix {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.proof-matrix article {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #cfe8aa;
+  border-radius: 8px;
+  background: #fbfff5;
+}
+
+.proof-matrix article.proof-harm {
+  border-color: #f7b4b4;
+  background: #fff7f7;
+}
+
+.proof-matrix span {
+  color: #667085;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.proof-matrix code,
+.proof-verdict code {
+  width: fit-content;
+  max-width: 100%;
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: #171b21;
+  color: #a7f3d0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.proof-matrix em {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #c03535;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.proof-matrix em.proof-ok {
+  color: #238b28;
+}
+
+.proof-verdict {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-top: 1px solid #d9e8c5;
+  background: #efffd9;
+}
+
+.proof-verdict span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #267b16;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.proof-verdict strong {
+  font-size: 12px;
+}
+
 @media (max-width: 1120px) {
   .app-shell {
     grid-template-columns: 82px minmax(0, 1fr);
@@ -1510,6 +1628,8 @@ pre {
 
   .action-grid,
   .agent-grid,
+  .proof-matrix,
+  .proof-verdict,
   .map-grid,
   .settings-grid,
   .lower-grid,

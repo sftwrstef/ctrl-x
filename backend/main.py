@@ -13,10 +13,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
+from proofs.idor_proof import write_proof
+
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT_DIR / "audit_console.sqlite3"
 RUNS_DIR = ROOT_DIR / "runs"
+ARTIFACTS_DIR = ROOT_DIR / "artifacts"
 
 
 class AuditCreateRequest(BaseModel):
@@ -276,6 +279,15 @@ def mock_scan_payload(run: AuditRunModel) -> dict[str, Any]:
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     return {"ok": True, "service": "bug-bunny-fastapi", "db_path": str(DB_PATH)}
+
+
+@app.post("/api/proofs/idor/run")
+def run_idor_verified_proof() -> dict[str, Any]:
+    artifact_path = ARTIFACTS_DIR / "idor-before.json"
+    proof = write_proof(artifact_path)
+    if proof["verdict"] != "confirmed":
+        raise HTTPException(status_code=500, detail="IDOR proof assertions did not hold.")
+    return {"proof": proof, "artifact_path": str(artifact_path)}
 
 
 @app.post("/api/audits/create")
