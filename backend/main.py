@@ -1238,7 +1238,7 @@ def run_opencode_analysis(run: AuditRunModel, findings: list[FindingModel]) -> d
     if (controlled_artifact is not None or authenticated_replay_artifact is not None) and artifact_path.exists():
         raise HTTPException(
             status_code=409,
-            detail="Kimi analysis is already preserved for this controlled-proof run; create a new run for new evidence.",
+            detail="AI review is already preserved for this controlled-proof run; create a new run for new evidence.",
         )
     ai_input = build_ai_input(run, findings)
     prompt = ai_prompt(ai_input)
@@ -1272,7 +1272,7 @@ def run_opencode_analysis(run: AuditRunModel, findings: list[FindingModel]) -> d
             check=False,
         )
     except subprocess.TimeoutExpired as error:
-        raise HTTPException(status_code=504, detail=f"Kimi analysis exceeded its {AI_TIMEOUT_SECONDS}-second limit.") from error
+        raise HTTPException(status_code=504, detail=f"AI review exceeded its {AI_TIMEOUT_SECONDS}-second limit.") from error
     latency_ms = round((time.monotonic() - started) * 1000)
     response_text, metadata = parse_opencode_events(completed.stdout)
     if completed.returncode != 0:
@@ -1283,7 +1283,7 @@ def run_opencode_analysis(run: AuditRunModel, findings: list[FindingModel]) -> d
     try:
         analysis = parse_analysis_json(response_text)
     except (json.JSONDecodeError, ValueError) as error:
-        raise HTTPException(status_code=502, detail=f"Kimi returned an invalid structured analysis: {error}") from error
+        raise HTTPException(status_code=502, detail=f"The configured AI model returned an invalid structured analysis: {error}") from error
 
     analysis, model_analysis = apply_analysis_server_gate(
         run,
@@ -1743,7 +1743,7 @@ def analyze_audit(run_id: str) -> dict[str, Any]:
         and load_controlled_proof_artifact(run) is None
         and load_authenticated_replay_artifact(run) is None
     ):
-        raise HTTPException(status_code=400, detail="Collect Web evidence before running Kimi analysis.")
+        raise HTTPException(status_code=400, detail="Collect Web evidence before running AI review.")
     run_opencode_analysis(run, findings)
     return response_for_run(get_run_or_404(run_id), findings)
 
@@ -1777,7 +1777,7 @@ def generate_report(run_id: str) -> dict[str, Any]:
         )
     ai_artifact = load_ai_analysis(run)
     if ai_artifact is None:
-        raise HTTPException(status_code=400, detail="Run Kimi evidence analysis before generating the report.")
+        raise HTTPException(status_code=400, detail="Run AI evidence review before generating the report.")
     analysis = ai_artifact["analysis"]
 
     report_path = Path(run.reports_dir) / ("observation-ledger.md" if run.mode == "external_program" else "report.md")
@@ -1852,7 +1852,7 @@ def generate_report(run_id: str) -> dict[str, Any]:
     lines.extend(
         [
             "",
-            "## Kimi Evidence Triage",
+            "## AI Evidence Review",
             f"- Provider: `{ai_artifact.get('provider', 'n/a')}`",
             f"- Model: `{ai_artifact.get('model_ref', 'n/a')}`",
             f"- OpenCode session: `{ai_artifact.get('session_id') or 'not recorded'}`",

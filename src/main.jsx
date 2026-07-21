@@ -55,19 +55,19 @@ const agentCatalog = [
     detail: 'DNS and HTTP receipts'
   },
   {
-    name: 'Kimi Reasoner',
+    name: 'AI Reviewer',
     role: 'Separates evidence from claims',
     icon: Sparkles,
     progress: 0,
     status: 'Waiting for evidence',
-    detail: 'OpenCode Go · tool access denied'
+    detail: 'Model-configurable · tool access denied'
   },
   {
     name: 'Report Builder',
     role: 'Packages evidence and AI verdict',
     icon: FileText,
     progress: 0,
-    status: 'Waiting for Kimi',
+    status: 'Waiting for AI review',
     detail: 'Markdown plus provenance'
   }
 ];
@@ -176,15 +176,15 @@ function buildAgents(audit, findings = [], requestedMode = 'local_lab', requeste
     const complete =
       (Boolean(audit) && name === 'Scope Gate') ||
       (hasEvidence && name === 'Evidence Collector') ||
-      (hasAnalysis && name === 'Kimi Reasoner') ||
+      (hasAnalysis && name === 'AI Reviewer') ||
       (hasReport && name === 'Report Builder');
     const running = status === 'scanning' && name === 'Evidence Collector';
     const progress = complete ? 100 : running ? 45 : 0;
     const summaries = {
       'Scope Gate': audit ? (controlledProof ? 'Controlled proof scope and status stored locally' : externalProgram ? 'Program policy receipt stored in SQLite' : 'Authorization receipt stored in SQLite') : 'Waiting for target',
       'Evidence Collector': hasEvidence ? (authenticatedReplayResult ? `${authenticatedReplayResult.requestBudgetUsed}/${authenticatedReplayResult.requestBudgetMax} bounded requests · ${authenticatedReplayResult.classification}` : controlledProofResult ? 'Owner control passed · 2/2 cross-account replays denied' : boundedExternal ? `${audit.evidence?.requestLog?.length || 0} attributed requests mapped the public surface` : externalProgram ? 'One exact GET stored; no discovery' : `${findings.length} bounded observations stored`) : controlledProof ? 'Waiting for two ephemeral authenticated captures' : 'Waiting for a scoped collection',
-      'Kimi Reasoner': hasAnalysis ? `${audit.aiAnalysis.analysis?.verdict || 'Analysis'} · ${audit.aiAnalysis.model_ref}` : 'Waiting for saved evidence',
-      'Report Builder': hasReport ? (externalProgram ? 'Observation ledger written to /runs' : 'Evidence report written to /runs') : 'Waiting for Kimi analysis'
+      'AI Reviewer': hasAnalysis ? `${audit.aiAnalysis.analysis?.verdict || 'Analysis'} · ${audit.aiAnalysis.model_ref}` : 'Waiting for saved evidence',
+      'Report Builder': hasReport ? (externalProgram ? 'Observation ledger written to /runs' : 'Evidence report written to /runs') : 'Waiting for AI review'
     };
     return {
       name,
@@ -192,7 +192,7 @@ function buildAgents(audit, findings = [], requestedMode = 'local_lab', requeste
       status: complete ? 'complete' : running ? 'running' : 'queued',
       progress,
       summary: summaries[name],
-      detail: name === 'Kimi Reasoner'
+      detail: name === 'AI Reviewer'
         ? 'Evidence-only OpenCode session · tools blocked'
         : externalProgram
           ? controlledProof ? (authenticatedReplayResult ? 'GET only · distinct sessions · same-state A/B controls · sanitized receipt' : 'Explicit hosts, two controlled accounts, known-ID replay, and stop condition enforced') : boundedExternal ? 'Intigriti allowlist, identity, rate, and budget enforced' : 'External passive boundary enforced'
@@ -245,7 +245,7 @@ function normalizeAuditResponse(data) {
   const timeline = aiAnalysis
     ? [{
         time: new Date(aiAnalysis.analyzed_at).toLocaleTimeString([], { hour12: false }),
-        agent: 'Kimi Reasoner',
+        agent: 'AI Reviewer',
         message: `${aiAnalysis.analysis?.verdict}: ${aiAnalysis.analysis?.summary || 'Evidence analyzed'}`,
         actor: 'AI',
         state: 'done'
@@ -471,7 +471,7 @@ function Composer({
       disabled: Boolean(busyAction) || !canCollect || controlledProofClosed
     },
     {
-      title: controlledAnalysisSaved ? 'Kimi analysis saved' : busyAction === 'analyze' ? 'Kimi is reasoning…' : 'Analyze current run with Kimi',
+      title: controlledAnalysisSaved ? 'AI review saved' : busyAction === 'analyze' ? 'AI is reviewing…' : 'Review current run with AI',
       subtitle: controlledAnalysisSaved ? 'Write-once session preserved with the run' : canAnalyze ? 'Redacted receipt → structured proof requirements' : 'Collect evidence first',
       Icon: Sparkles,
       action: onAnalyze,
@@ -479,7 +479,7 @@ function Composer({
     },
     {
       title: busyAction === 'report' ? 'Writing report…' : 'Generate evidence report',
-      subtitle: canReport ? (replayWorkflow ? 'Redacted proof receipt + Kimi verdict + provenance' : 'Deterministic receipts + Kimi verdict + provenance') : 'Run Kimi analysis first',
+      subtitle: canReport ? (replayWorkflow ? 'Redacted proof receipt + AI verdict + provenance' : 'Deterministic receipts + AI verdict + provenance') : 'Run AI review first',
       Icon: Clipboard,
       action: onGenerateReport,
       disabled: Boolean(busyAction) || !canReport
@@ -628,7 +628,7 @@ function AgentSwarm({ audit, requestedMode, requestedProfile }) {
     <section className="panel agent-swarm">
       <div className="panel-title swarm-title">
         <h3><Route size={18} /> {controlledProof ? 'Controlled Proof Pipeline' : boundedExternal ? 'Live Program Pipeline' : externalProgram ? 'Passive Program Pipeline' : 'Evidence Pipeline'}</h3>
-        <span className="provider-chip"><Sparkles size={14} /> OpenCode Go · Kimi K3</span>
+        <span className="provider-chip"><Sparkles size={14} /> Optional AI review · model-configurable</span>
       </div>
       <div className="agent-grid">
         {visibleAgents.map(({ name, role, progress, status, summary, detail }) => {
@@ -731,7 +731,7 @@ function CodeExcerpt({ finding, onCopy, externalProgram }) {
 
 function Timeline({ audit, expanded, setExpanded }) {
   const events = audit?.timeline?.length
-    ? audit.timeline.map((item) => [item.time, item.agent, item.message, item.actor || (item.agent === 'Kimi Reasoner' ? 'AI' : 'system'), item.state || 'done'])
+    ? audit.timeline.map((item) => [item.time, item.agent, item.message, item.actor || (item.agent === 'AI Reviewer' ? 'AI' : 'system'), item.state || 'done'])
     : [['--:--:--', 'Console', 'Create a hunt to write SQLite and /runs artifacts', 'local', 'open']];
   const visibleEvents = expanded ? events : events.slice(0, 12);
   return (
@@ -788,7 +788,7 @@ function EvidencePanel({ finding, audit, requestedMode, onReport, onCopy, notify
       formatStatus(audit.status),
       authenticatedReplay ? `${authenticatedReplay.verdict} · ${authenticatedReplay.classification} · submission ready: no` : controlledProof && audit.controlledProofResult ? 'Tested draft hypothesis closed as INVALID · NO IDOR' : `${audit.findings?.length || 0} ${externalProgram ? 'observations' : 'findings'} recorded`,
       authenticatedReplay ? `A→A and B→B controls · ${authenticatedReplay.requestBudgetUsed}/${authenticatedReplay.requestBudgetMax} bounded requests` : controlledProof ? 'Two-account known-ID boundary and stop condition enforced' : boundedExternal ? `${audit.policyReceipt.requestBudget}-request attributed live-target boundary enforced` : externalProgram ? 'One-GET passive boundary enforced' : 'Local / owned-target safety boundary',
-      audit.aiAnalysis ? `Kimi verdict: ${audit.aiAnalysis.analysis?.verdict}` : 'Kimi analysis pending',
+      audit.aiAnalysis ? `AI verdict: ${audit.aiAnalysis.analysis?.verdict}` : 'AI review pending',
       audit.report ? (externalProgram ? 'Observation ledger generated' : 'Report draft generated') : 'Report pending'
     ];
   }, [audit, externalProgram, boundedExternal, controlledProof, authenticatedReplay]);
@@ -873,8 +873,8 @@ function EvidencePanel({ finding, audit, requestedMode, onReport, onCopy, notify
       </section>
       <section className={`panel evidence-card ai-card ${audit?.aiAnalysis ? 'complete' : ''}`}>
         <div className="evidence-head">
-          <h4><Sparkles size={18} /> Kimi evidence triage</h4>
-          <span>{audit?.aiAnalysis?.model_ref || 'opencode-go/kimi-k3'}</span>
+          <h4><Sparkles size={18} /> AI evidence review</h4>
+          <span>{audit?.aiAnalysis?.model_ref || 'Model selected at runtime'}</span>
         </div>
         {audit?.aiAnalysis ? (
           <>
@@ -883,7 +883,7 @@ function EvidencePanel({ finding, audit, requestedMode, onReport, onCopy, notify
             <small>Session {audit.aiAnalysis.session_id || 'not recorded'} · input {audit.aiAnalysis.input_sha256?.slice(0, 12)}…</small>
           </>
         ) : (
-          <p>Collect evidence, then run Kimi. The model receives a redacted receipt and has no OpenCode tool permissions.</p>
+          <p>Collect evidence, then run an optional AI review. The configured model receives a redacted receipt and has no OpenCode tool permissions.</p>
         )}
       </section>
       <section className="panel refs-card">
@@ -1101,8 +1101,8 @@ function AuthenticatedReplayResult({ audit, onAnalyze, busyAction }) {
         <span>IMMUTABLE RECEIPT</span>
         <strong data-testid="replay-receipt-hash">SHA-256 {audit.authenticatedReplayReceiptSha256 || 'unavailable'}</strong>
         {audit.aiAnalysis
-          ? <code>Kimi {audit.aiAnalysis.analysis?.verdict} · session {audit.aiAnalysis.session_id || 'recorded'}</code>
-          : <button className="mini-action" type="button" onClick={onAnalyze} disabled={Boolean(busyAction)}><Sparkles size={15} /> {busyAction === 'analyze' ? 'Kimi is reasoning…' : 'Analyze with Kimi'}</button>}
+          ? <code>AI {audit.aiAnalysis.analysis?.verdict} · session {audit.aiAnalysis.session_id || 'recorded'}</code>
+          : <button className="mini-action" type="button" onClick={onAnalyze} disabled={Boolean(busyAction)}><Sparkles size={15} /> {busyAction === 'analyze' ? 'AI is reviewing…' : 'Review with AI'}</button>}
       </div>
     </section>
   );
@@ -1429,7 +1429,7 @@ function SettingsPanel({ providerStatus, onRefreshProvider, providerChecking }) 
           <span className={`status-dot ${providerStatus?.ready ? 'ready' : 'offline'}`} />
           <div>
             <strong>AI provider</strong>
-            <p>{providerStatus?.model || 'opencode-go/kimi-k3'}</p>
+            <p>{providerStatus?.model || 'Not configured'}</p>
             <small>{providerStatus?.detail || 'Status has not been checked yet.'}</small>
           </div>
           <button className="mini-action" onClick={onRefreshProvider} disabled={providerChecking}>
@@ -1506,7 +1506,7 @@ function ReportDraft({ audit, onCopy, onReport }) {
   const externalProgram = audit?.mode === 'external_program';
   const boundedExternal = externalProgram && audit?.policyReceipt?.profileId === 'intigriti-pwn';
   const controlledProof = Boolean(audit?.authenticatedReplayResult) || (externalProgram && isAuthenticatedReplayProfile(audit?.policyReceipt?.profileId));
-  const markdown = audit?.report?.markdown || (controlledProof ? '# Authenticated replay ledger not ready\n\nCapture two controlled sessions in Proof Lab, preview redaction, run the bounded replay, then let Kimi challenge the saved receipt.' : externalProgram ? `# Observation ledger not ready\n\nCollect the ${boundedExternal ? 'bounded live map' : 'passive receipt'}, run Kimi analysis, then generate the ledger.` : '# Report not ready\n\nCollect evidence, run Kimi analysis, then generate the report.');
+  const markdown = audit?.report?.markdown || (controlledProof ? '# Authenticated replay ledger not ready\n\nCapture two controlled sessions in Proof Lab, preview redaction, run the bounded replay, then let an optional AI reviewer challenge the saved receipt.' : externalProgram ? `# Observation ledger not ready\n\nCollect the ${boundedExternal ? 'bounded live map' : 'passive receipt'}, run AI review, then generate the ledger.` : '# Report not ready\n\nCollect evidence, run AI review, then generate the report.');
   return (
     <section className="panel report-panel">
       <div className="panel-title">
@@ -1653,7 +1653,7 @@ function App() {
       setProviderStatus(data);
       if (!silent) notify(data.ready ? `${data.model} is ready` : data.detail);
     } catch (statusError) {
-      setProviderStatus({ ready: false, model: 'opencode-go/kimi-k3', detail: statusError.message });
+      setProviderStatus({ ready: false, model: 'Unavailable', detail: statusError.message });
       if (!silent) notify(statusError.message);
     } finally {
       setProviderChecking(false);
@@ -1742,7 +1742,7 @@ function App() {
       const scanned = await api(`/api/audits/${created.audit.run_id}/run-web-audit`, { method: 'POST' });
       setAudit(normalizeAuditResponse(scanned));
       await refreshRuns(true);
-      notify(auditMode === 'external_program' ? (programProfile.profileId === 'intigriti-pwn' ? 'Live surface map saved — ready for Kimi' : 'Passive receipt saved — ready for Kimi') : 'Bounded evidence saved — ready for Kimi');
+      notify(auditMode === 'external_program' ? (programProfile.profileId === 'intigriti-pwn' ? 'Live surface map saved — ready for AI review' : 'Passive receipt saved — ready for AI review') : 'Bounded evidence saved — ready for AI review');
     } catch (runError) {
       setError(runError.message);
       notify(runError.message);
@@ -1762,7 +1762,7 @@ function App() {
       const analyzed = await api(`/api/audits/${audit.id}/analyze`, { method: 'POST' });
       setAudit(normalizeAuditResponse(analyzed));
       await refreshRuns(true);
-      notify(`Kimi verdict: ${analyzed.ai_analysis?.analysis?.verdict || 'analysis complete'}`);
+      notify(`AI verdict: ${analyzed.ai_analysis?.analysis?.verdict || 'analysis complete'}`);
     } catch (analysisError) {
       setError(analysisError.message);
       notify(analysisError.message);
@@ -1862,7 +1862,7 @@ function App() {
               <div>
                 <p className="eyebrow"><span />Authorized research workspace</p>
                 <h1>{activeNav === 'Proof Lab' ? 'Proof Lab' : activeNav}</h1>
-                <p className="title-subtitle">Collect deterministic evidence. Let Kimi challenge the claim. Verify impact before reporting.</p>
+                <p className="title-subtitle">Collect deterministic evidence. Let an optional AI challenge the claim. Verify impact before reporting.</p>
                 {activeNav === 'Findings' && <div className="tabs">
                   {tabs.map((name) => (
                     <button className={tab === name ? 'active' : ''} onClick={() => setTab(name)} key={name}>

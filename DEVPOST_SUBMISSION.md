@@ -8,7 +8,7 @@
 - **Track:** Developer Tools
 - **Tagline:** Capture the request. Replay the claim. Preserve the proof.
 - **Repository:** `https://github.com/sftwrstef/bug-bunny`
-- **Public YouTube demo:** `TODO: upload output/demo/bug-bunny-authenticated-replay-demo.mp4`
+- **Public YouTube demo:** `TODO: upload output/demo/bug-bunny-final-demo.mp4`
 - **Codex `/feedback` session ID:** `TODO: run /feedback in the primary build task`
 - **Feature commit:** `603e785696ff75733f86e8c1df91674787045e4d`
 
@@ -24,9 +24,9 @@ denial, and writes a secret-free integrity-hashed receipt.
 The result is deliberately narrow: **VERIFIED** only when Account B's isolated
 session receives Account A's unique marker; **INVALID** only after both controls
 pass and denial is stable; otherwise **INCONCLUSIVE**. Raw cookies, tokens,
-URLs, object IDs, markers, and bodies stay ephemeral. A separate Kimi K3 stage
-can challenge the sanitized evidence, but it cannot override the deterministic
-verdict or mark a live result ready for submission.
+URLs, object IDs, markers, and bodies stay ephemeral. An optional,
+model-configurable AI reviewer can challenge the sanitized evidence, but it
+cannot override the deterministic verdict or mark a live result ready for submission.
 
 ## Why it matters
 
@@ -34,8 +34,9 @@ Bug hunters lose time between seeing suspicious behavior and producing proof a
 program can trust. Naive replay tools also make it easy to mix sessions, follow
 redirects, over-test a target, or mistake a status code for impact. Bug Bunny
 builds the control experiment, safety boundary, and evidence receipt into one
-workflow. It is designed for researchers using reviewed HackerOne, Bugcrowd,
-or Intigriti programs—not for indiscriminate scanning.
+workflow. It is designed for local labs, systems the researcher owns, and
+explicitly authorized in-scope HackerOne, Bugcrowd, or Intigriti programs—not
+for indiscriminate scanning.
 
 ## How Codex and GPT-5.6 were used
 
@@ -56,13 +57,13 @@ reusable authenticated capture-and-replay engine. Codex helped:
 I made the product decision that AI may critique saved evidence but may never
 manufacture proof. GPT-5.6 Sol accelerated the architecture, implementation,
 security review, debugging, test design, interface, documentation, and demo
-workflow. Kimi K3 is an optional runtime evidence challenger, not the proof
-oracle.
+workflow. Runtime AI review is optional and model-configurable; it is never the
+proof oracle.
 
 ## What changed during Dev Week
 
 The eligible extension includes the live bounded Web engine, reviewed program
-profiles, Kimi evidence triage, persistent evidence/report workflow, verified
+profiles, optional AI evidence review, persistent evidence/report workflow, verified
 localhost proof, and the reusable authenticated replay engine. The exact
 pre-existing boundary and dated work ledger are documented in
 `PREEXISTING.md` and `DEV_WEEK_WORK.md`.
@@ -71,10 +72,11 @@ pre-existing boundary and dated work ledger are documented in
 
 Tested on macOS Apple silicon with Node.js 25.9.0, npm 11.12.1, Python 3.14.4,
 and a Chromium browser. The application runtime does not require an OpenAI API
-key. Kimi analysis is optional and requires an authenticated OpenCode Go setup.
+key. AI review is optional and accepts any model available through the
+operator's authenticated OpenCode setup.
 
 ```bash
-git clone TODO_FINAL_REPOSITORY_URL
+git clone https://github.com/sftwrstef/bug-bunny.git
 cd bug-bunny
 npm ci
 python3 -m venv .venv
@@ -105,9 +107,9 @@ Final local verification receipt:
 
 - Browser run: `b2784892-6cde-4bfd-a95d-33a30361327e`
 - Replay receipt integrity: `1d8fc9daa17241f14aab0bcb6c3e7e70ef9c132bd325860d587db6dce1857bff`
-- Kimi challenge session: `ses_07a422d7effeOrvAhxlSlRA9B8`
-- Narrated MP4: 78.68 seconds, H.264/AAC, SHA-256
-  `10c02c5777e03f9f9457fd910d80b8c86570cbaca52592400d25292b301ed99b`
+- Recorded optional-AI test session: `ses_07a422d7effeOrvAhxlSlRA9B8`
+- Narrated MP4: 79.23 seconds, H.264/AAC, SHA-256
+  `e6c3ab62f9032ee34b0a674d127bd896f893aab51c79080147d95a5360ed1c5a`
 - Clean-source verification: 32/32 proof tests, 6/6 Web-engine tests,
   production build pass, and zero production dependency vulnerabilities.
 

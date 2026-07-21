@@ -6,7 +6,7 @@
 
 `AUTHENTICATED REPLAY` &nbsp; `LOCAL-FIRST` &nbsp; `VICTIM-CENTERED` &nbsp; `OPENAI BUILD WEEK 2026`
 
-<sub>Built with Codex GPT-5.6 Sol · Kimi K3 evidence challenger · React / FastAPI / SQLite · MIT</sub>
+<sub>Built with Codex GPT-5.6 Sol · Model-configurable AI review · React / FastAPI / SQLite · MIT</sub>
 
 </div>
 
@@ -15,9 +15,10 @@
 > [!IMPORTANT]
 > **Observe broadly. Claim narrowly. Prove what matters.**
 >
-> Bug Bunny collects bounded evidence from an authorized Web target, asks Kimi
-> to challenge unsupported claims, and keeps AI observations separate from
-> deterministic proof.
+> Bug Bunny collects bounded evidence from local labs, owned systems, and
+> explicitly authorized in-scope Web targets. An optional configured AI model
+> can challenge unsupported claims, while deterministic proof remains in
+> control.
 
 ```text
 ┌─[ BUG BUNNY // AUTHORIZED PROOF CONSOLE ]──────────────────────────┐
@@ -39,7 +40,7 @@ fixtures.
 | **Scope Gate** | Records the target, mode, authorization, and traffic boundary | A persistent run receipt |
 | **Evidence Collector** | Runs bounded HTTP/DNS/route/header/cookie/CORS checks | Raw evidence and normalized observations |
 | **Authenticated Replay** | Validates two self-controlled sessions and equivalent objects, then runs a bounded A/B authorization differential | A deterministic verdict and sanitized receipt |
-| **Kimi Reasoner** | Sends a redacted saved-evidence packet to `opencode-go/kimi-k3` | Verdict, unsupported claims, dismissal risk, and next proof requirements |
+| **AI Reviewer** | Sends a redacted saved-evidence packet to the configured OpenCode model | Verdict, unsupported claims, dismissal risk, and next proof requirements |
 | **Report Builder** | Combines receipts, evidence, AI provenance, and proof status | A local Markdown observation report |
 
 The **Proof Lab** accepts two DevTools **Copy as cURL** captures from isolated
@@ -48,9 +49,9 @@ permits only `GET` against the exact allowlisted origin. The same engine can
 evaluate any object-level authorization hypothesis that fits the bounded A/B
 control matrix; it is not hard-coded to one route or one vendor.
 
-Kimi cannot mark a finding verified. The replay receipt controls the tested
-branch verdict; Kimi challenges its evidence and names the missing proof. Every
-live result remains human-review gated before submission.
+The AI reviewer cannot mark a finding verified. The replay receipt controls the
+tested branch verdict; AI can challenge its evidence and name missing proof.
+Every live result remains human-review gated before submission.
 
 ## Local / owned-target hunter
 
@@ -60,7 +61,7 @@ live result remains human-review gated before submission.
 | **Recon** | DNS, homepage, title, forms, same-origin links, robots.txt | Raw local evidence |
 | **Route map** | Same-origin `GET`/`HEAD` checks with time, redirect, and size limits | Route/status inventory |
 | **Trust checks** | Headers, cookies, CORS, dotfile validation | Evidence-backed observations |
-| **Handoff** | Repro commands, duplicate-search queries, timeline, Kimi triage, Markdown | Persistent SQLite run + report |
+| **Handoff** | Repro commands, duplicate-search queries, timeline, AI review, Markdown | Persistent SQLite run + report |
 
 Generic hardening gaps are labeled as observations—not inflated into bounty-grade
 vulnerabilities. Unbounded exploitation remains disabled for live targets; the
@@ -86,7 +87,7 @@ under `*.pwn.intigriti.rocks`:
 | **Discovery** | Root page, standard policy files, and same-origin public links/assets already referenced by retrieved pages |
 | **Client map** | Downloads a bounded set of public JavaScript assets and extracts API/auth route strings without probing those candidates |
 | **Blocked** | Cross-origin discovery, form submission, credentials, state changes, payload mutation, DoS, and access to other users' data |
-| **Output** | Attributed request ledger, public-asset map, endpoint leads, Kimi triage, and a non-submission observation report |
+| **Output** | Attributed request ledger, public-asset map, endpoint leads, optional AI review, and a non-submission observation report |
 
 The profile is pinned to the official Intigriti program page and a July 21, 2026
 policy snapshot. The operator must still read the current policy and confirm all
@@ -155,9 +156,10 @@ then enforces this fixed boundary:
 | **Browser probes** | No CORS origin manipulation, auth, payload mutation, or exploitation |
 | **Output** | Local observation ledger only; no PoC, duplicate verdict, severity claim, or submission-ready report |
 
-The resulting evidence is a prioritization hint, not a finding. Kimi can
-challenge the saved evidence and propose the safest manual next step, but it
-cannot increase the traffic budget or turn an observation into a submission.
+The resulting evidence is a prioritization hint, not a finding. An optional AI
+reviewer can challenge the saved evidence and propose the safest manual next
+step, but it cannot increase the traffic budget or turn an observation into a
+submission.
 Manually verify current scope, meaningful impact, duplicates, and a
 victim-centered proof before writing any vulnerability report. Program policies
 change: open and read the current policy yourself before acknowledging the gate.
@@ -191,7 +193,7 @@ DevTools capture B ─┘                                  │
 [Watch the 79-second authenticated replay browser demo](evidence/dev-week/authenticated-replay-demo.webm)
 or inspect the exact
 [sanitized receipt](evidence/dev-week/authenticated-replay-receipt.json) and
-[Kimi challenge receipt](evidence/dev-week/authenticated-replay-kimi-receipt.json).
+[recorded AI challenge receipt](evidence/dev-week/authenticated-replay-kimi-receipt.json).
 
 The original deterministic IDOR template remains available as a smaller local
 regression proof in `proofs/idor_proof.py`. It seeds attacker and victim data on
@@ -210,9 +212,9 @@ npm ci
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-# Required for the current AI-analysis stage:
-# install OpenCode, sign in to OpenCode Go, and confirm that
-# opencode-go/kimi-k3 appears in `opencode models`.
+# Optional AI-review stage:
+# install OpenCode, authenticate a provider, and set BUG_BUNNY_AI_MODEL
+# to a model that appears in `opencode models`.
 
 npm run dev
 ```
@@ -292,17 +294,17 @@ For live work, first read the current program policy yourself. Then:
 4. Capture each account reading its own equivalent object with DevTools **Copy
    as cURL**. Preview before execution; the raw capture fields are cleared after
    every attempt.
-5. Review the deterministic receipt, ask Kimi to challenge the saved evidence,
-   and generate the report. Manually validate scope, impact, and duplicates
-   before considering any submission.
+5. Review the deterministic receipt, optionally ask the configured AI model to
+   challenge the saved evidence, and generate the report. Manually validate
+   scope, impact, and duplicates before considering any submission.
 
 For ordinary recon, choose **Local / owned target → Bounded recon** or a reviewed
-live mapping profile, then follow **Collect bounded evidence → Analyze current
-run with Kimi → Generate evidence report**.
+live mapping profile, then follow **Collect bounded evidence → Review current
+run with AI → Generate evidence report**.
 
 Use **Proof Lab → Run real proof** for the deterministic localhost IDOR replay.
-Use **Settings → Refresh status** to confirm the selected Kimi model and
-OpenCode Go credential are available before analysis.
+Use **Settings → Refresh status** to confirm the configured model and
+OpenCode provider credential are available before optional analysis.
 
 For the reviewed live profile, select **Live bounty target → Intigriti PWN
 environment**, enter your real Intigriti username, read the current policy, and
@@ -337,24 +339,24 @@ artifact integrity, file-mode `0600` persistence, AI redaction, and the original
 deterministic IDOR proof. `test:web` runs six bounded Web-engine tests against
 deterministic fixtures.
 
-Runtime evidence is preserved in
+One historical optional-AI smoke test is preserved in
 [`evidence/dev-week/kimi-runtime-receipt.json`](evidence/dev-week/kimi-runtime-receipt.json),
 and deterministic proof evidence is in
 [`evidence/dev-week/verified-idor-proof.json`](evidence/dev-week/verified-idor-proof.json).
 The controlled live-result capture is
 [`evidence/dev-week/controlled-proof-closed.png`](evidence/dev-week/controlled-proof-closed.png).
-The reusable authenticated-replay screenshot, public-safe receipt, runtime Kimi
-receipt, recording, narration, and subtitles are indexed in
+The reusable authenticated-replay screenshot, public-safe receipt, optional-AI
+test receipt, recording, narration, and subtitles are indexed in
 [`evidence/dev-week/README.md`](evidence/dev-week/README.md). The upload-ready
-78.68-second H.264/AAC export is generated locally at
-`output/demo/bug-bunny-authenticated-replay-demo.mp4`.
+79.23-second H.264/AAC export is generated locally at
+`output/demo/bug-bunny-final-demo.mp4`.
 
 ## Inside the repo
 
 ```text
 src/                    React hunt console + real pipeline views
 server/auditEngine.js   Bounded live Web recon and analysis engine
-backend/                Persistent API, Kimi bridge, report + proof gates
+backend/                Persistent API, model-configurable AI bridge, report + proof gates
 backend/replay_engine.py Structural cURL parser + pinned bounded replay engine
 .opencode/agents/       Tool-denied Bug Bunny evidence-review agent
 proofs/idor_proof.py    Original deterministic localhost IDOR template
@@ -367,13 +369,14 @@ evidence/dev-week/      Runtime receipts, proof artifact, and demo captures
 
 | Pre-existing baseline | Dev Week extension |
 | --- | --- |
-| Dashboard, FastAPI API, SQLite storage, disconnected Web engine | Live engine integration, scope guardrails, Kimi evidence triage, persistent evidence, verified IDOR replay, reusable authenticated capture-and-replay, focused tests |
+| Dashboard, FastAPI API, SQLite storage, disconnected Web engine | Live engine integration, scope guardrails, optional AI evidence review, persistent evidence, verified IDOR replay, reusable authenticated capture-and-replay, focused tests |
 
-**Codex with GPT-5.6 Sol built the product. Kimi K3 is the runtime evidence
-challenger.** Kimi receives only saved, redacted evidence through OpenCode Go;
-it does not drive the replay, hold credentials, browse the target, or decide a
-deterministic verdict. Model, session, token, cost, latency, and redacted-input
-hash are stored with each analysis.
+**Codex with GPT-5.6 Sol built the product. Optional runtime AI review is
+model-configurable through OpenCode.** The configured model receives only saved,
+redacted evidence; it does not drive the replay, hold credentials, browse the
+target, or decide a deterministic verdict. Model, provider, session, token,
+cost, latency, and redacted-input hash are stored with each analysis. The
+included historical receipt used Kimi K3 only as a runtime smoke-test provider.
 Primary Codex build task: `019f7376-015c-78b3-a2ea-7b43e4b03b40`. The required
 `/feedback` receipt remains a separate final submission field; it is not
 fabricated from this task identifier.

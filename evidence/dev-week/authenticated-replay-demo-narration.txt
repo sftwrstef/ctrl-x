@@ -1,4 +1,4 @@
-Bug Bunny is a local-first proof console for authorized web research. It starts with a reusable policy boundary for a reviewed HackerOne, Bugcrowd, or Intigriti program. This recording contacts none of them; it switches to a localhost fixture with two synthetic accounts and a four-request ceiling.
+Bug Bunny is a local-first proof console for authorized web research. It works with local labs, systems you own, and explicitly authorized in-scope targets, including programs hosted on HackerOne, Bugcrowd, or Intigriti. This recording stays local, using two synthetic accounts, controlled objects, and a four-request ceiling.
 
 In Proof Lab, I paste each account's DevTools cURL capture. Tokens, object IDs, URLs, markers, and bodies stay ephemeral: never rendered or saved.
 
@@ -6,6 +6,6 @@ Before traffic, the preview confirms one endpoint shape, one changed locator, an
 
 The matrix runs B-to-B, A-to-A, then derives B-to-A by changing only the session. A's marker appears under B, so Bug Bunny stops immediately at three of four requests.
 
-The write-once receipt keeps hashes, marker booleans, timings, network controls, and integrity metadata. Kimi can challenge it separately; this recording stops at the deterministic result, with human review still required.
+The write-once receipt keeps hashes, marker booleans, timings, network controls, and integrity metadata. An optional, model-configurable AI reviewer can challenge the redacted evidence, but it never controls the deterministic verdict. Human review is still required.
 
 Codex with GPT-5.6 Sol turned the hard-coded IDOR demo into a reusable structural cURL parser, ephemeral-secret boundary, and four-request control-and-verdict gate, then added secure, failed-control, redirect, and tamper fixtures and tests. Bug Bunny turns a hunch into bounded, reproducible proof.

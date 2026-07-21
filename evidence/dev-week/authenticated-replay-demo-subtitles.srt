@@ -1,8 +1,8 @@
 1
 00:00:00,000 --> 00:00:15,000
 Bug Bunny is a local-first proof console for authorized Web research.
-It first shows the reusable reviewed-program boundary, then safely switches
-to a localhost fixture with two synthetic accounts and a four-request ceiling.
+It works with local labs, owned systems, and explicitly authorized in-scope
+targets, including HackerOne, Bugcrowd, and Intigriti programs.
 
 2
 00:00:15,000 --> 00:00:25,000
@@ -22,10 +22,10 @@ A's marker appears under B, so execution stops at 3 of 4 requests.
 5
 00:00:52,000 --> 00:01:05,000
 The write-once receipt keeps only hashes, outcome booleans, timing,
-network controls, and integrity metadata.
+network controls, and integrity metadata. Optional AI review is model-configurable.
 
 6
 00:01:05,000 --> 00:01:18,680
-Kimi can challenge the receipt separately; this capture stops at the result.
+AI can challenge the redacted evidence but never controls the verdict.
 GPT-5.6 Sol helped turn a hard-coded IDOR demo into a structural cURL parser,
 ephemeral-secret boundary, four-request verdict gate, and negative fixtures.

@@ -7,7 +7,8 @@ secrets are not evidence
 
 These files document Bug Bunny's post-baseline Dev Week work.
 
-- `kimi-runtime-receipt.json` records a real OpenCode Go / Kimi K3 evidence
+- `kimi-runtime-receipt.json` records a historical optional-AI smoke test using
+  OpenCode Go / Kimi K3 for evidence
   analysis: model, session, cost, tokens, latency, request ledger, redacted-input
   hash, advisory verdict, and server-side submission gate. The AI analyzed saved
   evidence and did not make another request to the target.
@@ -27,7 +28,7 @@ These files document Bug Bunny's post-baseline Dev Week work.
   response body, headers, credentials, cookies, tokens, or email addresses.
 - `controlled-proof-receipt.json` is the public-safe machine-readable receipt
   for that run, including the controlled actors, two denial outcomes, locator
-  hash, server classification, and Kimi provenance.
+  hash, server classification, and AI provenance.
 - `authenticated-replay-verified.png` shows the reusable engine's truthful
   A→A and B→B controls, derived B→A exposure, `3 / 4` stop condition, and
   immutable receipt hash for final hardened run
@@ -35,16 +36,16 @@ These files document Bug Bunny's post-baseline Dev Week work.
 - `authenticated-replay-receipt.json` is an exact public-safe copy of that
   run's secret-free, write-once receipt. Its internal integrity SHA-256 is
   `1d8fc9daa17241f14aab0bcb6c3e7e70ef9c132bd325860d587db6dce1857bff`.
-- `authenticated-replay-kimi-receipt.json` preserves the Kimi K3 challenge of
-  that exact final hardened receipt: OpenCode session
+- `authenticated-replay-kimi-receipt.json` preserves the model-specific
+  smoke-test challenge of that exact final hardened receipt: OpenCode session
   `ses_07a422d7effeOrvAhxlSlRA9B8`, redacted input hash, tokens, cost,
   deterministic/model verdicts, and the fail-closed submission gate.
 - `authenticated-replay-demo.webm`,
   `authenticated-replay-demo-narration.txt`, and
-  `authenticated-replay-demo-subtitles.srt` are the current 78.68-second
+  `authenticated-replay-demo-subtitles.srt` are the current 78.48-second
   browser recording, voiceover source, and timed captions. The upload-ready
   H.264/AAC file is local at
-  `output/demo/bug-bunny-authenticated-replay-demo.mp4`.
+  `output/demo/bug-bunny-final-demo.mp4`.
 - `bug-bunny-demo-narration.txt` and `bug-bunny-demo-subtitles.srt` are the
   voiceover and captions for the short real-product demo. The local,
   upload-ready MP4 is `output/demo/bug-bunny-demo.mp4`; generated media is
@@ -74,9 +75,11 @@ sanitized copy of the write-once, file-mode `0600` receipt containing only deriv
 shape metadata, outcome booleans, request/response hashes, request count,
 redaction assertions, DNS-pin metadata, and its integrity SHA-256.
 
-**Codex with GPT-5.6 Sol built the project. Kimi K3 is the runtime evidence
-challenger.** Kimi receives the sanitized receipt after replay; it does not
-hold credentials, send replay traffic, or control the deterministic verdict.
+**Codex with GPT-5.6 Sol built the project. Optional runtime AI review is
+model-configurable.** The configured model receives the sanitized receipt after
+replay; it does not hold credentials, send replay traffic, or control the
+deterministic verdict. Kimi K3 appears only in the preserved historical
+smoke-test receipt.
 
 ## Submission evidence checklist
 
@@ -87,7 +90,7 @@ hold credentials, send replay traffic, or control the deterministic verdict.
 - [x] Production client builds: `npm run build` with Vite 7.3.6.
 - [x] Production dependency audit is clean: `npm audit --omit=dev` — zero
   known vulnerabilities.
-- [x] Kimi runtime provenance is preserved in
+- [x] Optional-AI smoke-test provenance is preserved in
   `kimi-runtime-receipt.json`, including its OpenCode session ID.
 - [x] Run the vulnerable localhost fixture through the final browser UI and add
   `authenticated-replay-verified.png`.
@@ -98,9 +101,9 @@ hold credentials, send replay traffic, or control the deterministic verdict.
   run ID in this file: `b2784892-6cde-4bfd-a95d-33a30361327e`.
 - [x] Record a new under-three-minute video that visibly shows a fresh scoped
   run loading, secret paste zones, redaction preview, the request budget, A/B matrix,
-  deterministic verdict, receipt hash, and the separate Kimi handoff button.
+  deterministic verdict, receipt hash, and the separate AI-review handoff button.
   The current narrated
-  H.264/AAC export is 78.68 seconds; audio was explicitly checked at 27, 70, and 75
+  H.264/AAC export is 79.23 seconds; audio was explicitly checked at 27, 70, and 75
   seconds to prevent the earlier mute regression.
 - [ ] Add the final public video URL and verify it plays without authentication.
 - [x] Preserve feature commit
