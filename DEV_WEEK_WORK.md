@@ -285,3 +285,7 @@ now come from a policy-gated capture rather than a hard-coded endpoint.
 - Updated browser recording: `evidence/dev-week/authenticated-replay-demo.webm`;
   narrated upload file: `output/demo/bug-bunny-authenticated-replay-demo.mp4`
   (78.68 seconds, H.264/AAC, local-only until upload).
+- Published feature commit
+  `603e785696ff75733f86e8c1df91674787045e4d` to the public MIT-licensed
+  `sftwrstef/bug-bunny` repository and re-ran 32/32 proof tests, 6/6 Web tests,
+  and the production build from a fresh public clone.

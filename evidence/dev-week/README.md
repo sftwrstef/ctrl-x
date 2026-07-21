@@ -103,8 +103,9 @@ hold credentials, send replay traffic, or control the deterministic verdict.
   H.264/AAC export is 78.68 seconds; audio was explicitly checked at 27, 70, and 75
   seconds to prevent the earlier mute regression.
 - [ ] Add the final public video URL and verify it plays without authentication.
-- [ ] Preserve the feature commit hash and confirm the public repository matches
-  the tested checkout.
+- [x] Preserve feature commit
+  `603e785696ff75733f86e8c1df91674787045e4d`; confirm the public MIT-licensed
+  repository matches it; and repeat all tests plus the build from a clean clone.
 - [ ] Run `/feedback` in the Codex task and use its returned Codex session ID in
   the Devpost form.
 - [x] Verify the README setup from a clean source checkout: fresh `npm ci`,

@@ -10,7 +10,7 @@
 - **Repository:** `https://github.com/sftwrstef/bug-bunny`
 - **Public YouTube demo:** `TODO: upload output/demo/bug-bunny-authenticated-replay-demo.mp4`
 - **Codex `/feedback` session ID:** `TODO: run /feedback in the primary build task`
-- **Feature commit:** `TODO: final pushed commit SHA`
+- **Feature commit:** `603e785696ff75733f86e8c1df91674787045e4d`
 
 ## What it does
 
@@ -113,10 +113,10 @@ Final local verification receipt:
 
 ## Final submission gate
 
-- [ ] Commit and push the tested checkout; paste the SHA above.
-- [ ] Make the repository public with an appropriate license, or share the
-      private repository with both required judging addresses.
-- [ ] Verify the pushed repository from a clean clone.
+- [x] Commit and push the tested checkout; feature commit recorded above.
+- [x] Publish the repository under the MIT License.
+- [x] Verify the public feature commit from a clean clone: fresh dependencies,
+      32/32 proof tests, 6/6 Web tests, and production build all pass.
 - [ ] Upload the narrated MP4 as a public YouTube video and paste the URL.
 - [ ] Run `/feedback` in the primary build task and paste its session ID.
 - [ ] Confirm public playback, repository access, README setup, and all Devpost
